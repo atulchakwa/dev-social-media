@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const userSchema = new mongoose.Schema(
     {
         firstName: {
@@ -91,17 +92,25 @@ const userSchema = new mongoose.Schema(
         }
     }
 );
-userSchema.method.getJWT = async function(){
+userSchema.methods.getJWT = async function(){
     const user = this;
     const token = await jwt.sign({_id:user._id},"DEV@qwertyuiop",{expiresIn:"7d"});
     return token;
 }
 
-userSchema.method.validatePassword = async function(passwordInputByUser)
-{
-    const user = this;
-    const hashPassword = user.password;
-    const isPasswordValid = await bcrypt.compare(passwordInputByUser, hashPassword);
-}
+userSchema.methods.validatePassword = async function(passwordInputByUser) {
+    try {
+        const user = this;
+        const hashPassword = user.password;
+        if (!hashPassword) {
+            throw new Error("No password set for this user");
+        }
+        const isPasswordValid = await bcrypt.compare(passwordInputByUser, hashPassword);
+        return isPasswordValid;
+    } catch (error) {
+        console.error("Error validating password:", error);
+        return false; // Gracefully return false instead of throwing
+    }
+};
 
 module.exports = mongoose.model("User", userSchema);

@@ -1,83 +1,21 @@
 const express = require('express');
 const app = express();
 const connectDB = require("./config/database.js");
-const User = require("./model/user.model.js");
-const { isValidateSignUpData } = require("./utils/validator.js");
-const bcrypt = require('bcrypt');
 const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken");
-const{userAuth} = require("./middleware/auth.js");
+
+
+
 
 app.use(express.json());
 app.use(cookieParser());
 
-app.post("/signup", async (req, res) => {
-    try {
-        isValidateSignUpData(req);
-        const { firstName, lastName, email, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
-        console.log(hashedPassword);
+const authRouter = require('./router/auth.js')
+const profileRouter = require("./router/profile.js")
+const requestRouter = require("./router/request.js")
 
-        const user = new User({
-            firstName,
-            lastName,
-            email,
-            password: hashedPassword
-        });
-
-        console.log(req.body);
-        await user.save();
-        res.send("User successfully registered");
-    } catch (error) {
-        console.error("Error in user registration", error);
-        res.status(500).send("ERROR " + error.message);
-    }
-});
-
-app.post("/login", async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email: email });
-
-        if (!user) {
-            return res.status(404).send("User not found");
-        }
-        const isPasswordValid = await user.validatePassword(password);
-        if (isPasswordValid) {
-            const token = await user.getJWT();
-            res.send("Logged in successfully");
-        } else {
-            res.status(401).send("Invalid password");
-        }
-    } catch (err) {
-        res.status(500).send("Error " + err.message);
-    }
-});
-
-app.get("/profile", userAuth,async (req, res) => {
-    try{
-       
-       const user = req.user;
-       res.send(user);
-   
-  }
-    catch(err)
-    {
-        res.status(500).send("Error " + err.message);
-    }    // console.log(cookies);
-    // res.send("Reading cookies");
-});
-
- app.post("/sendConnectionRequest",userAuth,(req,res)=>{
-    try{
-             const user  = req.user;
-             res.send(user.firstName+ "Sending a connection Request" )
-    } 
-    catch(err){
-        res.status(500).send("Error "+ err.message)
-    }
- })
-
+app.use("/", authRouter);
+app.use("/", requestRouter);
+app.use("/", profileRouter);
 app.get("/users", async (req, res) => {
     const useremail = req.body.email;
     try {
