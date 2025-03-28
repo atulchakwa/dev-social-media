@@ -72,26 +72,20 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: "Hey there! I am using Social Media App",
             maxLength: [500, "About section cannot exceed 500 characters"]
+        },
+        skills:
+        {
+            type :[],
+            default:["C"]
         }
     },
     { 
-        timestamps: true,
-        toJSON: {
-            virtuals: true,
-            transform: function(doc, ret) {
-                delete ret.password; // Never send password in responses
-                return ret;
-            }
-        },
-        toObject: {
-            virtuals: true,
-            transform: function(doc, ret) {
-                delete ret.password;
-                return ret;
-            }
-        }
+        timestamps: true
+        
     }
 );
+
+  userSchema.index({firstName:1,lastName:1,email:1})
 userSchema.methods.getJWT = async function(){
     const user = this;
     const token = await jwt.sign({_id:user._id},"DEV@qwertyuiop",{expiresIn:"7d"});
